@@ -1,0 +1,76 @@
+ssh整合
+
+1. 加入Spring
+
+1). 加入jar包
+2). 在 web.xml 中配置 listener
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:applicationContext.xml</param-value>
+	</context-param>
+
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+3). 创建 Spring 配置文件
+
+2. 整合 Hibernate
+
+1). 加入jar包
+2). 创建Hibernate.cfg.xml配置文件
+	<!-- 配置方言 -->
+	<property name="hibernate.dialect">org.hibernate.dialect.MySQL5InnoDBDialect</property>
+
+	<!-- 显示Sql,格式化SQL -->
+	<property name="hibernate.show_sql">true</property>
+	<property name="hibernate.format_sql">true</property>
+	
+	<!-- 生成数据表的策略 -->
+	<property name="hibernate.hbm2ddl.auto">update</property>
+3). 在 Spring 中整合 Hibernate
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<property name="user" value="${jdbc.user}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+		<property name="driverClass" value="${jdbc.driverClass}"></property>
+		<property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+		<property name="initialPoolSize" value="${jdbc.initPoolSize}"></property>
+		<property name="maxPoolSize" value="${jdbc.maxPoolSize}"></property>
+	</bean>
+	
+	<!-- 配置sessionFactory -->
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="configLocation" value="classpath:hibernate.cfg.xml"></property>
+		<property name="mappingLocations" value="classpath:zust/usr/entities/*.hbm.xml"></property>
+	</bean>
+
+4). 在 Spring 中配置声明式事务
+	<!-- 配置Spring聲明式事務 -->
+	<bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory"></property>
+	</bean>
+	
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="get*" read-only="true"/>
+			<tx:method name="*"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- 配置切入點 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* zust.usr.service.*.*(..))" id="txPointcut"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+	</aop:config>
+
+3. 整合Struts2
+
+1). 加入jar包
+2). 在 web.xml 中添加struts2配置
+3). 创建 Struts2 的配置文件 struts.xml
+4). 在IOC容器中配置action, 必须配置scope为 prototype
+5). 在 struts.xml 中a ction 的 class 为 IOC 容器中的ID
+
+4.完成功能
+
+
